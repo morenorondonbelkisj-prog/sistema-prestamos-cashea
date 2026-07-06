@@ -10,7 +10,7 @@ class Cuota extends Model
     use HasFactory;
 
     protected $table = 'cuotas';
-    protected $primaryKey = 'id_cuota';
+    protected $primaryKey = 'id_cuota'; //llave primaria
 
     protected $fillable = [
         'id_prestamo',

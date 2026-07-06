@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Pago;
 use App\Models\Cuota;
 use App\Models\PrestamoFinanciero;
-use App\Models\FacturaPago; // <-- Importamos el nuevo modelo
+use App\Models\FacturaPago; // Importamos el nuevo modelo
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;

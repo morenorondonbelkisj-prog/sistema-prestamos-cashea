@@ -11,7 +11,7 @@ class FacturaPago extends Model
     use HasFactory;
 
     protected $table = 'facturas_pago';
-    protected $primaryKey = 'id_factura';
+    protected $primaryKey = 'id_factura'; //llave primaria
 
     protected $fillable = [
         'id_pago',
@@ -29,9 +29,8 @@ class FacturaPago extends Model
         'total_facturado' => 'decimal:2',
     ];
 
-    /**
-     * Relación: Una factura pertenece a un pago único.
-     */
+    // Relación Una factura pertenece a un pago único.
+     
     public function pago(): BelongsTo
     {
         return $this->belongsTo(Pago::class, 'id_pago', 'id_pago');

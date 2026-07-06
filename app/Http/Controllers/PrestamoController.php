@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PrestamoFinanciero;
-use App\Models\Cuota; // <-- Asegúrate de que esta línea esté escrita
+use App\Models\Cuota; // Asegúrate de que esta línea esté escrita
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;

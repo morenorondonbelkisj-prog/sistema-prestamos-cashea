@@ -25,13 +25,13 @@ class PrestamoFinanciero extends Model
         'fecha_solicitud'
     ];
 
-    // RELACIÓN ORIENTADA A OBJETOS: Un préstamo pertenece a un Cliente
+    // RELACIÓN ORIENTADA A OBJETOS Un préstamo pertenece a un Cliente
     public function cliente()
     {
         return $this->belongsTo(Cliente::class, 'id_cliente', 'id_cliente');
     }
 
-    // RELACIÓN ORIENTADA A OBJETOS: Un préstamo se divide en muchas cuotas (1 a N)
+    // RELACIÓN ORIENTADA A OBJETOS Un préstamo se divide en muchas cuotas (1 a N)
     public function cuotas()
     {
         return $this->hasMany(Cuota::class, 'id_prestamo', 'id_prestamo');

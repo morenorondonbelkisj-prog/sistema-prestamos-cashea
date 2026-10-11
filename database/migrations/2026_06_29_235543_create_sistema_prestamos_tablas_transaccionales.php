@@ -39,14 +39,17 @@ return new class extends Migration
             $table->foreign('id_prestamo')->references('id_prestamo')->on('prestamos_financieros')->onDelete('cascade');
         });
 
-        // 3. TABLA: pagos
+       // 3. TABLA: pagos
         Schema::create('pagos', function (Blueprint $table) {
             $table->id('id_pago');
             $table->unsignedBigInteger('id_cuota');
             $table->decimal('monto_pagado', 14, 2);
-            $table->date('fecha_pago');
+            $table->dateTime('fecha_pago'); // O date('fecha_pago') según prefieras, pero dateTime calza con Carbon::now()
             $table->string('metodo_pago'); // PAGO_MOVIL, TRANSFERENCIA
-            $table->string('referencia_bancaria')->unique();
+            $table->string('referencia_bancaria')->unique()->nullable(); // Permitir nullable por si acaso
+            $table->string('banco_origen', 100)->nullable(); // <--- ¡Añadido!
+            $table->string('estado_pago', 50)->default('completado'); // <--- ¡Añadido!
+            $table->text('observaciones')->nullable(); // <--- ¡Añadido!
             $table->timestamps();
 
             $table->foreign('id_cuota')->references('id_cuota')->on('cuotas')->onDelete('restrict');

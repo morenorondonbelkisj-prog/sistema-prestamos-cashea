@@ -1,0 +1,30 @@
+FROM php:8.3-cli-alpine
+
+# 1. Instalar dependencias del sistema y bibliotecas requeridas
+RUN apk add --no-cache \
+    $PHPIZE_DEPS \
+    postgresql-dev \
+    libpng-dev \
+    zip \
+    libzip-dev \
+    linux-headers
+
+# 2. Instalar y habilitar extensiones PDO PostgreSQL y MongoDB
+RUN docker-php-ext-install pdo pdo_pgsql \
+    && pecl install mongodb \
+    && docker-php-ext-enable mongodb pdo_pgsql
+
+# 3. Instalar Composer copiándolo desde la imagen oficial
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# 4. Establecer el directorio de trabajo
+WORKDIR /var/www/html
+
+# 5. Copiar el código fuente del proyecto al contenedor
+COPY . /var/www/html
+
+# 6. Exponer el puerto predeterminado de Laravel
+EXPOSE 8000
+
+# 7. Comando predeterminado para iniciar el servidor de desarrollo de Laravel
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]

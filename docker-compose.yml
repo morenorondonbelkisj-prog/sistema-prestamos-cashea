@@ -1,33 +1,30 @@
-version: '3.8'
-
 services:
-  # 1. Contenedor del Backend (Laravel)
- # 1. Contenedor del Backend (Laravel con PHP y MongoDB habilitado)
-# 1. Contenedor del Backend (PHP Oficial - Modo Persistente)
+ # 1. Contenedor del Backend (Laravel)
   laravel-app:
-    image: php:8.3-cli-alpine
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
     container_name: sistema_prestamos_app
     volumes:
       - .:/var/www/html
     working_dir: /var/www/html
     ports:
       - "8000:8000"
-    command: ["tail", "-f", "/dev/null"] # Esto mantiene el contenedor vivo siempre
+    command: ["tail", "-f", "/dev/null"]
     networks:
       - red-prestamos
     depends_on:
       - postgres-db
       - mongo-db
-
-  # 2. Contenedor de la Base de Datos Relacional (PostgreSQL)
+  # 2. Base de Datos Relacional (PostgreSQL)
   postgres-db:
     image: postgres:15-alpine
     container_name: sistema_prestamos_postgres
     restart: always
     environment:
-      POSTGRES_DB: sistema_prestamos
+      POSTGRES_DB: cashea_borrow_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: rootpassword
+      POSTGRES_PASSWORD: "1234"
     ports:
       - "5432:5432"
     volumes:
@@ -35,7 +32,7 @@ services:
     networks:
       - red-prestamos
 
-  # 3. Contenedor de la Base de Datos NoSQL / Documental (MongoDB)
+  # 3. Base de Datos NoSQL / Documental (MongoDB)
   mongo-db:
     image: mongo:6.0
     container_name: sistema_prestamos_mongo

@@ -2,31 +2,33 @@
 
 namespace App\Models;
 
-// ¡OJO! Usamos el modelo de MongoDB, no el tradicional de Laravel
-use MongoDB\Laravel\Eloquent\Model; 
+// Modelo Eloquent estándar de Laravel (PostgreSQL / Relacional)
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class ContratoPrestamo extends Model
 {
-    // Indicamos explícitamente la conexión NoSQL
-    protected $connection = 'mongodb'; 
-    
-    // El nombre de la "colección" (el equivalente a tabla en MongoDB)
-    protected $collection = 'contratos_digitales'; 
+    use HasFactory;
 
-    // Permitimos guardar cualquier estructura JSON dentro de estos campos
-    protected $fillable = [
-        'prestamo_id',
-        'codigo_contrato',
-        'cedula_cliente',
-        'terminos_condiciones',
-        'esquema_pagos_json', // Aquí irá la matriz de cuotas estructurada
-        'firmado_digitalmente',
-        'fecha_emision'
-    ];
+    // Conexión explícita a PostgreSQL
+    protected $connection = 'pgsql'; 
 
-    // Forzamos a que el esquema de pagos se guarde y lea como un arreglo/JSON nativo
+    // Nombre de la tabla en PostgreSQL (reemplaza por el nombre real de tu tabla)
+    protected $table = 'contratos_prestamos'; 
+
+    // Desactivar protección de asignación masiva
+    protected $guarded = [];
+
+    // Castings necesarios para JSONB y fechas en PostgreSQL
     protected $casts = [
-       // 'esquema_pagos_json' => 'array',
-        'fecha_emision' => 'datetime',
+        'esquema_pagos_json' => 'array',
+        'condiciones'        => 'array',
+        'creado_el'          => 'datetime',
     ];
+
+    // Relación inversa con el Préstamo
+    public function prestamo()
+    {
+        return $this->belongsTo(PrestamoFinanciero::class, 'prestamo_id');
+    }
 }

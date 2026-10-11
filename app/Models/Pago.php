@@ -4,18 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne; // Importar la  relación
+use App\Models\FacturaPago; // Asegúrate de importar el correcto
 
 class Pago extends Model
 {
     use HasFactory;
 
     protected $table = 'pagos';
-    protected $primaryKey = 'id_pago';  // Llave primaria
+    protected $primaryKey = 'id_pago';
+    public $timestamps = false; 
 
     protected $fillable = [
-        'id_cuota',          // Relación directa con la cuota
+        'id_cuota',
         'monto_pagado',
         'fecha_pago',
         'metodo_pago',
@@ -25,25 +25,9 @@ class Pago extends Model
         'observaciones'
     ];
 
-    protected $casts = [
-        'fecha_pago' => 'datetime',
-        'monto_pagado' => 'decimal:2',
-    ];
-
-    
-     // Relación: Un pago pertenece a una cuota específica.
-     
-    public function cuota(): BelongsTo
+    // Relación con factura (usando FacturaPago)
+    public function factura()
     {
-        return $this->belongsTo(Cuota::class, 'id_cuota', 'id_cuota');
-    }
-
-    
-     // Relación: Un pago genera una única factura fiscal (1:1).
-     
-    public function factura(): HasOne
-    {
-        // La foránea en 'factura_pagos' es 'pago_id' y la local aquí es 'id_pago'
-        return $this->hasOne(FacturaPago::class, 'pago_id', 'id_pago');
+        return $this->hasOne(FacturaPago::class, 'id_pago', 'id_pago');
     }
 }

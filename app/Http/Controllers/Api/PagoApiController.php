@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cuota;
-use App\Models\Pago;
-use App\Models\FacturaPago;
+use App\Models\Pago; // <--- ¡Esta línea es la que falta y genera el error!
+use App\Models\PrestamoFinanciero;
+use App\Http\Resources\Api\CuotaResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -13,15 +14,18 @@ use Carbon\Carbon;
 
 class PagoApiController extends Controller
 {
+
+
     /**
      * EVIDENCIA: API REST - Listar el historial de pagos realizados
      */
     public function index()
     {
-        $pagos = Pago::with('factura')->get();
+        $pagos = Pago::with('factura')->orderBy('id_pago', 'desc')->get();
+
         return response()->json([
             'success' => true,
-            'data' => $pagos
+            'data'    => $pagos
         ], 200);
     }
 
@@ -30,74 +34,119 @@ class PagoApiController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validamos que la cuota exista
+        // 1. Validamos la petición usando id_cuota
         $validator = Validator::make($request->all(), [
-            'cuota_id' => 'required|exists:cuotas,id', // Ajusta 'id' si tu llave primaria de cuota se llama distinto
-            'monto_pagado' => 'required|numeric|min:0.01',
-            'metodo_pago'  => 'required|string|max:50', // Ej. Transferencia, Pago Móvil, Efectivo
+            'id_cuota'            => 'required|exists:cuotas,id_cuota',
+            'monto_pagado'        => 'required|numeric|min:0.01',
+            'metodo_pago'         => 'required|string|max:50',
+            'referencia_bancaria' => 'nullable|string|max:100',
+            'banco_origen'        => 'nullable|string|max:100',
+            'observaciones'       => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors'  => $validator->errors()
             ], 422);
         }
 
-        // 2. Iniciamos la transacción en PostgreSQL
-        DB::beginTransaction();
-
+        // 2. Ejecutamos la transacción en PostgreSQL
         try {
-            // Buscamos la cuota para verificar su estado
-            $cuota = Cuota::findOrFail($request->cuota_id);
+            $resultado = DB::transaction(function () use ($request) {
+                // Buscamos la cuota con bloqueo para evitar condiciones de carrera
+                $cuota = Cuota::where('id_cuota', $request->id_cuota)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-            if ($cuota->estado === 'pagado') {
+                // Validar si la cuota ya fue pagada
+                if ($cuota->estado_cuota === 'pagada') {
+                    return [
+                        'error'   => true,
+                        'status'  => 400,
+                        'message' => 'Esta cuota ya se encuentra totalmente cancelada.'
+                    ];
+                }
+                // 3. Registrar el Pago con los nombres correctos de la tabla pagos
+                $pago = Pago::create([
+                    'id_cuota'            => $cuota->id_cuota,
+                    'monto_pagado'        => $request->monto_pagado,
+                    'fecha_pago'          => Carbon::now(),
+                    'metodo_pago'         => $request->metodo_pago,
+                    'referencia_bancaria' => $request->referencia_bancaria,
+                    'banco_origen'        => $request->banco_origen,
+                    'estado_pago'         => 'completado',
+                    'observaciones'       => $request->observaciones,
+                ]);
+
+                // 4. Actualizar el estado de la cuota
+                $cuota->estado_cuota = 'pagada';
+                $cuota->save();
+
+// 5. Emitir Factura ligada al id_pago
+$factura = $pago->factura()->create([
+    'numero_control'   => 'FAC-' . time(),
+    'fecha_emision'    => Carbon::now(),
+    'subtotal'         => $request->monto_pagado,
+    'iva'              => 0.00,
+    'total_facturado'  => $request->monto_pagado, // <--- Añade esto para completar los campos obligatorios
+]);
+                // 6. Recalcular el estado del préstamo financiero asociado
+                $prestamo = PrestamoFinanciero::with('cuotas')
+                    ->where('id_prestamo', $cuota->id_prestamo)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $totalCuotas   = $prestamo->cuotas->count();
+                $cuotasPagadas = $prestamo->cuotas->where('estado_cuota', 'pagada')->count();
+                $cuotasEnMora  = $prestamo->cuotas->where('estado_cuota', 'en_mora')->count();
+
+                if ($cuotasPagadas === $totalCuotas) {
+                    $prestamo->estado_prestamo = 'finalizado';
+                } elseif ($cuotasEnMora > 0) {
+                    $prestamo->estado_prestamo = 'en_mora';
+                } else {
+                    $prestamo->estado_prestamo = 'activo';
+                }
+
+                $prestamo->save();
+
+                return [
+                    'error'    => false,
+                    'status'   => 201,
+                    'pago'     => $pago,
+                    'cuota'    => new CuotaResource($cuota),
+                    'factura'  => $factura,
+                    'prestamo' => [
+                        'id_prestamo'  => $prestamo->id_prestamo,
+                        'nuevo_estado' => $prestamo->estado_prestamo
+                    ]
+                ];
+            });
+
+            if ($resultado['error']) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Esta cuota ya se encuentra totalmente cancelada.'
-                ], 400);
+                    'message' => $resultado['message']
+                ], $resultado['status']);
             }
-
-            // 3. ORM: Registrar el Pago
-            $pago = Pago::create([
-                'cuota_id'     => $cuota->id,
-                'monto'        => $request->monto_pagado,
-                'fecha_pago'   => Carbon::now()->toDateString(),
-                'metodo_pago'  => $request->metodo_pago,
-            ]);
-
-            // 4. Actualizar el estado de la cuota usando el ORM
-            $cuota->update([
-                'estado' => 'pagado'
-            ]);
-
-            // 5. Relaciones ORM: Crear la factura ligada directamente al pago recién hecho
-            $factura = $pago->factura()->create([
-                'numero_factura' => 'FAC-' . time(), // Generamos un número único basado en el tiempo
-                'fecha_emision'  => Carbon::now()->toDateTimeString(),
-                'monto_total'    => $request->monto_pagado,
-            ]);
-
-            // Si todo fue exitoso, confirmamos en PostgreSQL
-            DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Pago procesado con éxito y factura emitida.',
-                'data' => [
-                    'pago' => $pago,
-                    'cuota_actualizada' => $cuota,
-                    'factura' => $factura
+                'data'    => [
+                    'pago'              => $resultado['pago'],
+                    'cuota_actualizada' => $resultado['cuota'],
+                    'factura'           => $resultado['factura'],
+                    'prestamo'          => $resultado['prestamo']
                 ]
             ], 201);
 
         } catch (\Exception $e) {
-            // En caso de error, revertimos para no dejar datos inconsistentes
-            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Error al procesar el pago transaccional',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ], 500);
         }
     }

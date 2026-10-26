@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<comprobantePrestamo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                     xsi:noNamespaceSchemaLocation="esquema-prestamo.xsd">
+    <idPrestamo>101</idPrestamo>
+    <fechaEmision>2026-10-19</fechaEmision>
+    <cliente>
+        <cedula>V-20.123.456</cedula>
+        <nombreCompleto>Belkis Moreno</nombreCompleto>
+        <telefono>0414-7778899</telefono>
+    </cliente>
+    <detallesFinanciamiento>
+        <montoTotal currency="USD">150.00</montoTotal>
+        <porcentajeInicial>40</porcentajeInicial>
+        <montoInicial currency="USD">60.00</montoInicial>
+        <plazoCuotas>3</plazoCuotas>
+    </detallesFinanciamiento>
+    <planPagos>
+        <cuota numero="1">
+            <vencimiento>2026-11-02</vencimiento>
+            <montoCuota currency="USD">30.00</montoCuota>
+            <estado>PENDIENTE</estado>
+        </cuota>
+        <cuota numero="2">
+            <vencimiento>2026-11-16</vencimiento>
+            <montoCuota currency="USD">30.00</montoCuota>
+            <estado>PENDIENTE</estado>
+        </cuota>
+        <cuota numero="3">
+            <vencimiento>2026-11-30</vencimiento>
+            <montoCuota currency="USD">30.00</montoCuota>
+            <estado>PENDIENTE</estado>
+        </cuota>
+    </planPagos>
+</comprobantePrestamo>

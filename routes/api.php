@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\ClienteController;
 use App\Http\Controllers\Api\PrestamoApiController;
 use App\Http\Controllers\Api\PagoApiController;
 use App\Http\Controllers\PrestamoController;
+use App\Http\Controllers\ReporteController; // <-- 1. Importa tu nuevo controlador aquí
 
 /*
 |--------------------------------------------------------------------------
@@ -25,3 +26,9 @@ Route::post('/cuotas/{id}/pagar', [PagoApiController::class, 'pagarCuota']);
 Route::get('/olap/resumen-cartera', [PrestamoController::class, 'obtenerResumenOlap']);
 Route::get('/auditoria', [PrestamoController::class, 'obtenerAuditoria']);
 Route::put('/prestamos/{id}/estado', [PrestamoController::class, 'actualizarEstadoPrestamo']);
+
+// ======================================================================
+// NUEVAS RUTAS: REPORTE XML (CAPÍTULO I) Y RIESGO DE MOROSIDAD (CAPÍTULO II)
+// ======================================================================
+Route::get('/reportes/prestamo/{id}/xml', [ReporteController::class, 'exportarPrestamoXml']);
+Route::get('/reportes/riesgo-morosidad', [ReporteController::class, 'evaluarRiesgoMorosidad']);

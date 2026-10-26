@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="comprobantePrestamo">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="idPrestamo" type="xs:integer"/>
+                <xs:element name="fechaEmision" type="xs:date"/>
+                <xs:element name="cliente">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="cedula" type="xs:string"/>
+                            <xs:element name="nombreCompleto" type="xs:string"/>
+                            <xs:element name="telefono" type="xs:string"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="detallesFinanciamiento">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="montoTotal">
+                                <xs:complexType>
+                                    <xs:simpleContent>
+                                        <xs:extension base="xs:decimal">
+                                            <xs:attribute name="currency" type="xs:string" use="required"/>
+                                        </xs:extension>
+                                    </xs:simpleContent>
+                                </xs:complexType>
+                            </xs:element>
+                            <xs:element name="porcentajeInicial" type="xs:integer"/>
+                            <xs:element name="montoInicial" type="xs:decimal"/>
+                            <xs:element name="plazoCuotas" type="xs:integer"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="planPagos">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="cuota" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="vencimiento" type="xs:date"/>
+                                        <xs:element name="montoCuota" type="xs:decimal"/>
+                                        <xs:element name="estado" type="xs:string"/>
+                                    </xs:sequence>
+                                    <xs:attribute name="numero" type="xs:integer" use="required"/>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
